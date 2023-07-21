@@ -62,6 +62,13 @@ There are various mapping schemes available like 'jordan_wigner', 'bravyi_kitaev
 
 2. Generating a Random circuit Ansatz
 ![Variational Forms](imgs/VariationalForm.png)
+The expectation value of any wave function will be at least the minimum eigenvalue associated with the wave function.
+The ground state of the Hamiltonian system is the smallest eigenvalue associated with the Hermitian matrix
+
+3. Optimizing the Paramters
+This stop involves defining the cost function that will be given as the objective funtion to the optimizer.We have used the statevecor_simulator as the backend for our quantum instance.
+We have used the **COBYLA** optimizer for this project.
+**COBYLA** is a derivative-free optimization algorithm widely used in quantum computing and variational algorithms like VQE (Variational Quantum Eigensolver). It belongs to the family of direct-search methods and is particularly well-suited for problems with constraints. In VQE, COBYLA helps find the optimal parameters for a parameterized quantum circuit to minimize the energy expectation value of a given quantum Hamiltonian. Unlike gradient-based methods, COBYLA doesn't require gradient information, making it suitable for noisy intermediate-scale quantum (NISQ) devices where precise gradients are challenging to compute.
 ## Project Work Description
 
 Let's go through the notebook step by step and understand the functioning and reasoning behind each step.
