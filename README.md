@@ -95,4 +95,253 @@ from qiskit.algorithms.optimizers import SPSA, SLSQP, COBYLA
 import time
 ```
 
-First we have to define the molecule.
+- First we have to define the molecule. I have used qubit reduction as well to minimize the number of qubits required.
+```python
+# Defining the molecular information including atomic symbols, coordinates, multiplicity, and charge
+molecule = MoleculeInfo(
+    # Coordinates in Angstrom
+    symbols=["H", "H"],  # Atomic symbols of the two hydrogen atoms
+    coords=([0.0, 0.0, -0.3625], [0.0, 0.0, 0.3625]),  # Coordinates of the two hydrogen atoms
+    multiplicity=1,  # Multiplicity of the molecule (1 for singlet)
+    charge=0,  # Charge of the molecule (neutral charge)
+)
+
+# Create a PySCF driver to compute the molecular integrals
+driver = PySCFDriver.from_molecule(molecule)
+
+# Run the driver to obtain the electronic structure problem
+problem = driver.run()
+
+# Extract the second quantized operators representing the Hamiltonian
+second_q_ops = problem.second_q_ops()
+
+# Get the number of spatial orbitals and the number of particles in the system
+num_spatial_orbitals = problem.num_spatial_orbitals
+num_particles = problem.num_particles
+
+# We are using ParityMapper to map the electronic structure problem to qubits, 
+mapper = ParityMapper(num_particles=num_particles)
+
+
+hamiltonian = second_q_ops[0]
+
+# Performing two-qubit reduction
+qubit_op = mapper.map(hamiltonian)
+print(qubit_op)
+
+```
+
+    SparsePauliOp(['II', 'IZ', 'ZI', 'ZZ', 'XX'],
+                  coeffs=[-1.05016043+0.j,  0.40421466+0.j, -0.40421466+0.j, -0.01134688+0.j,
+      0.18037525+0.j])
+
+
+
+```python
+repulsion_energy = problem.nuclear_repulsion_energy# we will use this later to adjust the total energy
+print(repulsion_energy)
+```
+
+    0.7298996012689656
+
+- Next we define the function that will be used to generate the refernce value for the ground state energy. For this process, we use the NumPyMinimumEigensolver from the Qiskit.algorithms library.
+
+```python
+def exact_solver(qubit_op, problem):
+    """
+    Solves the quantum problem exactly using the NumPyMinimumEigensolver that will be
+    used as reference for the results of the custom VQE
+
+    Args:
+        qubit_op (WeightedPauliOperator): The qubit operator representing the quantum problem.
+        problem (ElectronicStructureProblem): The electronic structure problem containing
+                                              information about the molecule and the Hamiltonian.
+
+    Returns:
+        dict: A dictionary containing the result of the exact solver.
+
+    Raises:
+        AlgorithmError: If an error occurs during the computation.
+    """
+    # Use NumPyMinimumEigensolver to compute the minimum eigenvalue
+    sol = NumPyMinimumEigensolver().compute_minimum_eigenvalue(qubit_op)
+    if sol is None:
+        raise ValueError("Solver did not find a valid solution.")
+    
+    result = problem.interpret(sol)
+    return result
+```
+## Important Functions
+## Random_circuit_ansatz
+This funnction generates a random ansatz depending on the number of qubits and the depths. A bool has been used to specify whether to include 2 qubit gates are to be applied or not. When set to true, it randomly applies the 2-qubit gates to pairs. 
+```python
+def random_circuit_ansatz(num_qubits, depth, include_two_qubit_gates=True):
+    """
+    Generate a random quantum circuit ansatz.
+
+    Args:
+        num_qubits (int): The number of qubits in the circuit.
+        depth (int): The depth of the circuit, i.e., the number of layers of gates.
+        include_two_qubit_gates (bool): If True, include two-qubit gates in the circuit.
+
+    Returns:
+        QuantumCircuit: A randomly generated quantum circuit ansatz.
+
+    Notes:
+        This function generates a random quantum circuit ansatz with the specified number
+        of qubits and depth. The circuit can include single-qubit gates (Hadamard, RX, RY, and RZ),
+        and optionally, two-qubit gates (CX gates).
+
+        The circuit is parameterized using Parameter objects, allowing for later optimization
+        of the circuit's parameters.
+
+        If include_two_qubit_gates is True, the function randomly adds CX gates between pairs
+        of qubits with a 50% probability.
+
+        The generated quantum circuit is returned for further use in VQE or other quantum algorithms.
+    """
+    circuit = QuantumCircuit(num_qubits)
+
+    # Create parameter objects for the circuit parameters
+    circuit_params = [[Parameter(f"theta_{d}_{q}") for q in range(num_qubits)] for d in range(depth)]
+
+    for d in range(depth):
+        for q in range(num_qubits):
+            rand_gate = np.random.choice(['h', 'rx', 'ry', 'rz'])
+            rand_param = circuit_params[d][q]  # Get the corresponding parameter object
+
+            if rand_gate == 'h':
+                circuit.h(q)
+            elif rand_gate == 'rx':
+                circuit.rx(rand_param, q)
+            elif rand_gate == 'ry':
+                circuit.ry(rand_param, q)
+            elif rand_gate == 'rz':
+                circuit.rz(rand_param, q)
+        if include_two_qubit_gates:
+            for qubit1 in range(num_qubits - 1):
+                for qubit2 in range(qubit1 + 1, num_qubits):
+                    if np.random.rand() < 0.5:
+                        circuit.cx(qubit1, qubit2)
+
+    return circuit
+```
+
+## Calculate_expectation
+Here we have used the statevecor_simulator backend.
+This is used to create the objective functionof the VQE.
+```python
+def calculate_expectation(circuit, params, hamiltonian):
+    """
+    Calculate the expectation value of a quantum circuit with respect to a given Hamiltonian.
+
+    Args:
+        circuit (QuantumCircuit): The quantum circuit to evaluate.
+        params (numpy.ndarray): An array of parameter values to bind to the circuit.
+        hamiltonian matrix : The Hamiltonian operator.
+
+    Returns:
+        float: The expectation value of the circuit with respect to the Hamiltonian.
+
+    Notes:
+        This function calculates the expectation value of a quantum circuit with respect to
+        a given Hamiltonian. The circuit is parameterized using Parameter objects, and the
+        provided parameter values are bound to the circuit before evaluation.
+
+        The function simulates the quantum circuit on the statevector simulator backend
+        and computes the expectation value using the statevector representation of the circuit's
+        final state. The expectation value is calculated as the inner product between the
+        statevector and the Hamiltonian operator.
+
+        The function returns the total expected energy.
+
+    Raises:
+        QiskitError: If the circuit evaluation job fails or the Hamiltonian is invalid.
+    """
+    backend = Aer.get_backend('statevector_simulator')
+
+    # Bind the provided parameter values to the circuit
+    bound_circuit = circuit.bind_parameters({p: val for p, val in zip(circuit.parameters, params.flatten())})
+
+    try:
+        # Execute the bound circuit on the statevector simulator backend
+        job = execute(bound_circuit, backend)
+        result = job.result()
+        statevector = result.get_statevector()
+    except Exception as exc:
+        raise QiskitError("Failed to evaluate the circuit on the statevector simulator!") from exc
+
+    # Calculate the expectation value as the inner product between statevector and Hamiltonian
+    expectation = np.vdot(statevector, np.dot(hamiltonian, statevector))
+    return expectation.real
+
+```
+
+## my_vqe
+I have used by own implementation of the VQE algorithm. It internally makes use of COBYLA optimizer though other optimizers can also be easily incorporated.
+
+```python
+def my_vqe(ansatz_circuit, qubit_op, max_iterations=100, tolerance=1e-4):
+    """
+    Perform the Variational Quantum Eigensolver (VQE) algorithm to find the ground state energy
+    of a given Hamiltonian using a parameterized quantum circuit (ansatz).
+
+    Args:
+        ansatz_circuit (QuantumCircuit): The parameterized quantum circuit (ansatz) to prepare the quantum state.
+        qubit_op (PauliSumOp | SparsePauliOp | BaseOperator): The Hamiltonian as a qubit operator for which
+            the ground state energy is to be calculated.
+        max_iterations (int, optional): The maximum number of iterations for the optimizer (default is 100).
+        tolerance (float, optional): The convergence tolerance for the optimizer (default is 1e-4).
+
+    Returns:
+        tuple: A tuple containing the following elements:
+            - numpy.ndarray: The optimal parameters for the ansatz circuit.
+            - float: The final ground state energy obtained after VQE optimization.
+            - float: The time taken for the VQE optimization.
+
+    Note:
+        The objective function of the COBYLA optimizer is defined internally to update the circuit,
+        print intermediate energies in steps of 5, and return the intermediate energy during optimization.
+
+    Example:
+        num_qubits = 4
+        depth = 3
+        ansatz_circuit = random_circuit_ansatz(num_qubits, depth)
+        params, final_energy, optimizer_time = my_vqe(ansatz_circuit, hamiltonian)
+        print(f"Optimal parameters: {params}")
+        print(f"Final ground state energy: {final_energy}")
+        print(f"Optimizer time: {optimizer_time} seconds")
+    """
+    
+    #Random initialization of the circuit parameters
+    num_params = len(ansatz_circuit.parameters)
+    params = random_params(num_params)
+    circuit = assign_parameters(ansatz_circuit, params)
+    hamiltonian = qubit_op.to_matrix()
+    
+    previous_energy = float('inf')
+
+    optimizer = COBYLA(maxiter=max_iterations, tol=tolerance)
+
+    # The objective function for the optimizer
+    eval_count = 0
+    def objective_function(p):
+        nonlocal eval_count
+        updated_circuit = assign_parameters(ansatz_circuit, p)
+        intermediate_energy = calculate_expectation(updated_circuit, p, hamiltonian)
+        eval_count += 1
+        if eval_count%5 == 0:
+            print(f"Iteration {eval_count}: Energy = {intermediate_energy}")
+        return intermediate_energy
+
+    start_time = time.time()
+    result = optimizer.minimize(objective_function, x0=params)
+    end_time = time.time()
+
+    optimal_params = result.x
+    final_energy = calculate_expectation(ansatz_circuit, optimal_params, hamiltonian)
+    optimizer_time = end_time - start_time
+
+    return params, final_energy, optimizer_time
+
+```
