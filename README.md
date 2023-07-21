@@ -429,3 +429,11 @@ Now lets take a look at the results of the various cases.
 ## Without 2 qubit gates
 ![Depth-without](results/Accuracy-Depth(without2qubitsgates).png)
 ![Time-without](results/Time-Depth(without2qubitgates).png)
+
+## With 2 qubit gates(randomly applied)
+![Depth-with](results/Accuracy-Depth(with2qubitgates).png)
+![Time-with](results/Time-Depth(with2qubitgates).png)
+
+## EfficientSU2
+![Depth-ESU2](results/Accuracy-Depth(EfficientSU2).png)
+![Time-ESU2](results/Time-Depth(EfficientSU2).png)
