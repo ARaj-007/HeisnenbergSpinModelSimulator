@@ -19,7 +19,7 @@ This repository contains the implementation of a custom made Variational Quantum
 - The goal is to implement a VQE algorithm with a random circuit ansatz and study the accuracy obtained and time required for varying ansatz depth, as well as the impact of including or excluding two-qubit gates.
 
 ## Installation and Usage
-To run the code and try out the VQE algorithm, you can either download the notebook "SimulationUsingRandomCircuitAnsatz.ipynb" and run it on a platform like IBM QuantumLab or if you prefer to run on a local machine in the form of a python script then follow the steps given below:
+To run the code and try out the VQE algorithm, you can either download the notebook **"SimulationUsingRandomCircuitAnsatz.ipynb"** and run it on a platform like IBM QuantumLab or if you prefer to run on a local machine in the form of a python script then follow the steps given below:
 
 ### Installation
 1. Clone this repository to your local machine:
@@ -432,10 +432,12 @@ Now lets take a look at the results of the various cases.
 ## Without 2 qubit gates
 ![Depth-without](results/Accuracy-Depth(without2qubitsgates).png)
 ![Time-without](results/Time-Depth(without2qubitgates).png)
+
 The results are close but never equal to correct value. In my multiple rounds of execution, I found that the depth had little effect and the results were more or less close. In the particular execution for which the plot is shown,for a few inital depths, the guesses are off but afterwords they remain more or less conisitent.
 ## With 2 qubit gates(randomly applied)
 ![Depth-with](results/Accuracy-Depth(with2qubitgates).png)
 ![Time-with](results/Time-Depth(with2qubitgates).png)
+
 In this case, in the many executions that I conducted, I found there were more number of correct VQE rresults, while for few inital depths the results were off.
 
 Note, we were randomly applying the 2 qubit gates with 50 percent probability, so that could also have an impact here.
@@ -450,7 +452,7 @@ In this case, for the initial Depths, the results were very accurate, however af
 In all the cases, more or less, optimization time increased with Depth.
 
 ## Conclusion
-We generated a random circuit ansatz, defined our custom expectation value function and a custom VQE implementation. We saw the impact of including 2 qubit gates as well the results of the EffientSU2(using Estimator and Qiskit's VQE). In conclusion, applying the 2 qubit gates did increase the accuracy of the final answers, however there were off guesses as well. This could also be due to the fact of random application of 2 qubit gates as well as the imapct of initializing the ansatz completely randomly (i.e no particluar inital state like the HartreeFock State). On the other hand, EfficientSU2 gave great results for inital few reps(depths), but later began to diverge suggesting the adverse impact of too many paramters to optimize. 
+We generated a random circuit ansatz, defined our custom expectation value function and a custom VQE implementation. We saw the impact of including 2 qubit gates as well the results of the EfficientSU2(using Estimator and Qiskit's VQE). In conclusion, applying the 2 qubit gates did increase the accuracy of the final answers, however there were off guesses as well. This could also be due to the fact of random application of 2 qubit gates as well as the imapct of initializing the ansatz completely randomly (i.e no particluar inital state like the HartreeFock State). On the other hand, EfficientSU2 gave great results for inital few reps(depths), but later began to diverge suggesting the adverse impact of too many paramters to optimize. 
 Overall, it was a great learning and research experience and there is immense potenial to further optimize this implementation.
 
 ## Contributing
