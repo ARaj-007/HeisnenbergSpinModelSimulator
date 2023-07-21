@@ -369,7 +369,7 @@ The EfficientSU2 circuit consists of layers of single qubit operations spanned b
 
 SU(2) stands for special unitary group of degree 2, its elements are 2 x 2 unitary matrices with determinant 1, such as the Pauli rotation gates.
 
-![Efficient SU2]()
+![Efficient SU2](imgs/EfficientSU2.png)
 ## Estimator
 The Estimator class in Qiskit is a tool for estimating the expectation values of observables over quantum circuits. It can be used to estimate the expectation values of both classical and quantum observables.
 
@@ -424,3 +424,8 @@ for dep in depths_3:
     times_3.append(total_time)
     print(f"Depth {dep}: VQE_Result = {vqe_result}: Time {total_time}")
 ```
+# Results
+Now lets take a look at the results of the various cases.
+## Without 2 qubit gates
+![Depth-without](results/Accuracy-Depth(without2qubitsgates).png)
+![Time-without](results/Time-Depth(without2qubitgates).png)
