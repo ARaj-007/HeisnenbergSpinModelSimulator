@@ -66,7 +66,7 @@ The expectation value of any wave function will be at least the minimum eigenval
 The ground state of the Hamiltonian system is the smallest eigenvalue associated with the Hermitian matrix
 
 3. Optimizing the Paramters
-This stop involves defining the cost function that will be given as the objective funtion to the optimizer.We have used the statevecor_simulator as the backend for our quantum instance.
+This stop involves defining the cost function that will be given as the objective funtion to the optimizer.We have used the statevector_simulator as the backend for our quantum instance.
 We have used the **COBYLA** optimizer for this project.
 **COBYLA** is a derivative-free optimization algorithm widely used in quantum computing and variational algorithms like VQE (Variational Quantum Eigensolver). It belongs to the family of direct-search methods and is particularly well-suited for problems with constraints. In VQE, COBYLA helps find the optimal parameters for a parameterized quantum circuit to minimize the energy expectation value of a given quantum Hamiltonian. Unlike gradient-based methods, COBYLA doesn't require gradient information, making it suitable for noisy intermediate-scale quantum (NISQ) devices where precise gradients are challenging to compute.
 ## Project Work Description
@@ -229,7 +229,7 @@ def random_circuit_ansatz(num_qubits, depth, include_two_qubit_gates=True):
 ```
 
 ## Calculate_expectation
-Here we have used the statevecor_simulator backend.
+Here we have used the statevector_simulator backend.
 This is used to create the objective functionof the VQE.
 ```python
 def calculate_expectation(circuit, params, hamiltonian):
