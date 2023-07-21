@@ -345,3 +345,82 @@ def my_vqe(ansatz_circuit, qubit_op, max_iterations=100, tolerance=1e-4):
     return params, final_energy, optimizer_time
 
 ```
+- Next we test this implementation for 2 cases when only single qubit gates are used and when both single and 2 qubit gates are used. Here's an example:
+```python
+depths = np.arange(1, 30, 1)
+times = []
+vqe_energies = []
+for dep in depths:
+    var_form =  random_circuit_ansatz(qubit_op.num_qubits,dep, False)#No 2 qubit gates
+    optimal_params, final_energy, total_time = my_vqe(var_form, qubit_op)
+    vqe_result = final_energy + repulsion_energy #Adding the shift
+    vqe_energies.append(vqe_result)
+    times.append(total_time)
+    print(
+        f"Depth: {np.round(dep, 2)}",
+        f"VQE Result: {vqe_result:.5f}",
+        f"Time: {total_time:.3f} seconds",
+    )
+```
+To test the effect of depths I have also tested out the EffientSU2 ansatz using Qiskit library's functions - Estimator class for the expectation value and the VQE algorithm. Its results have also been recorded.
+### EfficientSU2
+The EfficientSU2 circuit consists of layers of single qubit operations spanned by SU(2) and 
+ entanglements. This is a heuristic pattern that can be used to prepare trial wave functions for variational quantum algorithms or classification circuit for machine learning.
+
+SU(2) stands for special unitary group of degree 2, its elements are 2 x 2 unitary matrices with determinant 1, such as the Pauli rotation gates.
+
+![Efficient SU2]()
+## Estimator
+The Estimator class in Qiskit is a tool for estimating the expectation values of observables over quantum circuits. It can be used to estimate the expectation values of both classical and quantum observables.
+
+The Estimator class takes a number of parameters, including the following:
+
+- Circuits: A list of quantum circuits.
+- Observables: A list of observables.
+- Parameter values: A list of lists of parameters.
+- Backend: The backend to use for running the circuits.
+- Run options: A dictionary of runtime options.
+
+## VQE
+Variational Quantum Eigensolver (VQE) is a hybrid quantum-classical algorithm for finding the ground state energy of a Hamiltonian. It works by iteratively optimizing a classical variational circuit to minimize the energy of the Hamiltonian.
+
+The VQE algorithm is implemented in the VQE class in the Qiskit library. The VQE class takes a number of parameters, including the following:
+
+- Hamiltonian: The Hamiltonian to be solved.
+- Variational circuit: The variational circuit to be optimized.
+- Optimizer: The optimizer to be used for optimizing the variational circuit.
+- Backend: The backend to use for running the circuits.
+- Run options: A dictionary of runtime options.
+The VQE class then iteratively optimizes the variational circuit to minimize the energy of the Hamiltonian. The results are returned as an VQEResult object.
+
+The VQEResult object contains the following information:
+
+- Energy: The ground state energy of the Hamiltonian.
+- Variance: The variance of the ground state energy.
+- Iterations: The number of iterations used to optimize the variational circuit.
+- Warnings: A list of warnings that were encountered.
+
+```python
+# Now lets see the results using EfficientSU2 and the VQE algorithm from the Qiskit Library
+# We will also make use of Estimator to calculate the expectation value
+from qiskit_aer.primitives import Estimator
+from qiskit.algorithms.minimum_eigensolvers import VQE
+from qiskit.circuit.library import EfficientSU2
+
+depths_3 = np.arange(1, 30, 1)
+times_3 = []
+vqe_energies_3 = []
+noiseless_estimator = Estimator(approximation=True)
+optimizer = COBYLA(maxiter=100, tol = 1e-4)
+for dep in depths_3:
+    var_form = EfficientSU2(qubit_op.num_qubits, entanglement="linear", reps = dep)
+    start_time = time.time()
+    vqe = VQE(noiseless_estimator, var_form, optimizer)
+    vqe_calc = vqe.compute_minimum_eigenvalue(qubit_op)
+    end_time = time.time()
+    vqe_result = problem.interpret(vqe_calc).total_energies[0].real
+    vqe_energies_3.append(vqe_result)
+    total_time = end_time - start_time
+    times_3.append(total_time)
+    print(f"Depth {dep}: VQE_Result = {vqe_result}: Time {total_time}")
+```
