@@ -174,6 +174,7 @@ def exact_solver(qubit_op, problem):
 ## Important Functions
 ## Random_circuit_ansatz
 This funnction generates a random ansatz depending on the number of qubits and the depths. A bool has been used to specify whether to include 2 qubit gates are to be applied or not. When set to true, it randomly applies the 2-qubit gates to pairs. 
+Note we are randomly choosing the gates. For the case of two qubit gates as well, the function randomly adds CX gates between pairs of qubits with a 50% probability.
 ```python
 def random_circuit_ansatz(num_qubits, depth, include_two_qubit_gates=True):
     """
@@ -279,6 +280,8 @@ def calculate_expectation(circuit, params, hamiltonian):
 
 ## my_vqe
 I have used by own implementation of the VQE algorithm. It internally makes use of COBYLA optimizer though other optimizers can also be easily incorporated.
+
+Note we are initializing the ansatz randomly within the function itself. The parameter initialization is completely random.
 
 ```python
 def my_vqe(ansatz_circuit, qubit_op, max_iterations=100, tolerance=1e-4):
@@ -429,11 +432,31 @@ Now lets take a look at the results of the various cases.
 ## Without 2 qubit gates
 ![Depth-without](results/Accuracy-Depth(without2qubitsgates).png)
 ![Time-without](results/Time-Depth(without2qubitgates).png)
-
+The results are close but never equal to correct value. In my multiple rounds of execution, I found that the depth had little effect and the results were more or less close. In the particular execution for which the plot is shown,for a few inital depths, the guesses are off but afterwords they remain more or less conisitent.
 ## With 2 qubit gates(randomly applied)
 ![Depth-with](results/Accuracy-Depth(with2qubitgates).png)
 ![Time-with](results/Time-Depth(with2qubitgates).png)
+In this case, in the many executions that I conducted, I found there were more number of correct VQE rresults, while for few inital depths the results were off.
+
+Note, we were randomly applying the 2 qubit gates with 50 percent probability, so that could also have an impact here.
+In general, the results were more accurate.
 
 ## EfficientSU2
 ![Depth-ESU2](results/Accuracy-Depth(EfficientSU2).png)
 ![Time-ESU2](results/Time-Depth(EfficientSU2).png)
+
+In this case, for the initial Depths, the results were very accurate, however after certain number of depths we can see that the results began to deviate.
+
+In all the cases, more or less, optimization time increased with Depth.
+
+## Conclusion
+We generated a random circuit ansatz, defined our custom expectation value function and a custom VQE implementation. We saw the impact of including 2 qubit gates as well the results of the EffientSU2(using Estimator and Qiskit's VQE). In conclusion, applying the 2 qubit gates did increase the accuracy of the final answers, however there were off guesses as well. This could also be due to the fact of random application of 2 qubit gates as well as the imapct of initializing the ansatz completely randomly (i.e no particluar inital state like the HartreeFock State). On the other hand, EfficientSU2 gave great results for inital few reps(depths), but later began to diverge suggesting the adverse impact of too many paramters to optimize. 
+Overall, it was a great learning and research experience and there is immense potenial to further optimize this implementation.
+
+## Contributing
+This project is open to any suggestions and contribution from interesed parties.
+
+If you find any issues or want to contribute to this project, feel free to open a pull request or submit an issue.
+
+## License
+This project is licensed under the MIT License. Feel free to use and modify the code as per the terms of the license.
