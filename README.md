@@ -46,7 +46,22 @@ The development of hybrid algorithms that combine quantum and classical computat
 Among these algorithms, the Variational Quantum Eigensolver (VQE) has garnered significant attention for exploring the electronic structures of atoms and molecules through the Rayleigh-Ritz variational principle.By employing a parameterized quantum circuit, VQE aims to approximate the ground state of molecular Hamiltonians, enabling theoretical chemists to study reaction rates, molecular stability, and spectroscopic properties.
 ![Introduction](imgs/Introduction.png)
 
+### Ground State energy 
+![Ground State](imgs/GroundState.png)
+The ground state energy of a molecule is a crucial property that becomes increasingly challenging to compute as the molecule's size grows. Currently, the largest molecule that has been successfully simulated is Beryllium Hydride. As molecules get larger, the complexity of molecular simulations grows exponentially. These simulations find applications in various fields, including drug discovery.
 
+For the purposes of this project, I have considered a rather simple model H2.
+
+## Steps Involved
+The variational principle states that the energy of any trial wave function is always greater than or equal to the exact ground state energy of the system. In Chemistry,the minimum eigenvalue of a matrix represents the ground state energy of a Hermitian matrix.
+
+1. We map the molecular Hamiltonians into qubit Hamiltonians.
+There are various mapping schemes available like 'jordan_wigner', 'bravyi_kitaev', etc. I have used 'ParityMapper" here.
+
+**ParityMapper** is an effective mapping technique used in quantum chemistry to convert the complex electronic structure problems of molecules into qubit representations suitable for quantum simulations. By exploiting spatial and spin symmetries, it efficiently groups similar electronic states together, reducing the number of qubits required. This approach enables quantum computers to simulate small to moderately-sized molecules, providing valuable insights into ground state energies, electronic structures, and reaction dynamics. 
+
+2. Generating a Random circuit Ansatz
+![Variational Forms](imgs/VariationalForm.png)
 ## Project Work Description
 
 Let's go through the notebook step by step and understand the functioning and reasoning behind each step.
